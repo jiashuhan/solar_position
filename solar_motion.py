@@ -71,6 +71,7 @@ ROT_RATE        = 2 * np.pi / (SIDEREAL_DAY * DAY) # Earth rotation rate (sidere
 
 # Other parameters
 EARTH_RADIUS    = 6.371e6 # [m]; assume sphere
+SUN_RADIUS      = 6.957e8 # [m]; assume sphere
 
 def ecc_anomaly(e, M, tolerance=0.002):
     """
@@ -113,7 +114,9 @@ def sun_vector(jd):
     Returns
     -------
     sun_vector: 1d array
-        Vector pointing at the Sun from Earth's center [m] 
+        Vector pointing at the Sun from Earth's center [m]
+    sun_angular_size: float
+        Angular radius of the Sun from Earth's surface [deg]
     """
     time_since_epoch = jd - EPOCH # [d]
     M = (MEAN_ANOMALY + 360 / ORBITAL_PERIOD * time_since_epoch) % 360 # mean anomaly at jd [deg]
@@ -127,7 +130,9 @@ def sun_vector(jd):
     x = r * np.cos(nu) # = a * (np.cos(E) - e)
     y = r * np.sin(nu) # = a * (1 - e**2)**0.5 * np.sin(E)
 
-    return np.array([-x, -y, 0]) # [m]
+    sun_angular_size = SUN_RADIUS / (r - EARTH_RADIUS) / np.pi * 180 # [deg]
+
+    return np.array([-x, -y, 0]), sun_angular_size
 
 def rot_axis(march_equinox=EQUINOX_DATE):
     """
@@ -146,7 +151,7 @@ def rot_axis(march_equinox=EQUINOX_DATE):
     xhat = np.array([1, 0, 0]) # reference direction on orbital plane
     zhat = np.array([0, 0, 1]) # normal vector to orbital plane
 
-    sun = unit_vec(sun_vector(march_equinox)) # in the orbital plane, orthogonal to Earth's axis at equinox
+    sun = unit_vec(sun_vector(march_equinox)[0]) # in the orbital plane, orthogonal to Earth's axis at equinox
     theta = rotation_angle(sun, xhat, axis=zhat) # angle between Earth-Sun vector and reference direction
     
     # rotate zhat CW around Earth-Sun vector (radially inward) by ROT_TILT to get axis
@@ -174,7 +179,7 @@ def zenith(jd, lat, lon):
     elapsed_time = jd - EQUINOX_DATE # time elapsed since reference date [d]
     xhat = np.array([1, 0, 0]) # reference direction in orbital plane
     zhat = np.array([0, 0, 1]) # normal vector to the orbital plane
-    zenith_0 = unit_vec(sun_vector(EQUINOX_DATE)) # subsolar zenith at equinox aligns with Earth-Sun vector
+    zenith_0 = unit_vec(sun_vector(EQUINOX_DATE)[0]) # subsolar zenith at equinox aligns with Earth-Sun vector
 
     lat_diff = (lat - LAT_SUBSOLAR) / 180 * np.pi # *** note that this is a CW angle since colat = 90 - lat
     lon_diff = (lon - LON_SUBSOLAR) / 180 * np.pi # CCW angle
@@ -192,7 +197,7 @@ def zenith(jd, lat, lon):
 
 def sun_location(jd, lat, lon):
     """
-    Find altitude and azimuthal angles of the Sun at given time and location
+    Find altitude and azimuthal angles and the angular size of the Sun at given time and location
 
     Parameters
     ----------
@@ -203,12 +208,13 @@ def sun_location(jd, lat, lon):
 
     Returns
     -------
-    altitude, azimuth: float
-        Altitude and azimuthal angles of the Sun [deg]
+    altitude, azimuth, angular_size: float
+        Altitude and azimuthal angles and the angular size of the Sun [deg]
     """
     axis = rot_axis() # Earth's axis
     zhat = zenith(jd, lat, lon) # zenith
-    sun = unit_vec(sun_vector(jd) - EARTH_RADIUS * zhat) # unit vector pointing at the Sun
+    sun_, angular_size = sun_vector(jd)
+    sun = unit_vec(sun_ - EARTH_RADIUS * zhat) # unit vector pointing at the Sun
 
     altitude = 90 - (np.arccos(np.dot(sun, zhat)) / np.pi * 180) # -90 < altitude < 90
 
@@ -218,7 +224,7 @@ def sun_location(jd, lat, lon):
 
     azimuth = rotation_angle(sun_proj, north, axis=zhat) * 180 / np.pi # 0 < azimuth < 360
 
-    return altitude, azimuth
+    return altitude, azimuth, angular_size
 
 def rotation_angle(A, B, axis=None):
     """

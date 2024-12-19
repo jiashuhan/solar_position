@@ -160,6 +160,12 @@ def calendar_split(calendar_date):
 
     return int(Y), int(M), int(D), int(H), int(MIN), float(S)
 
+def time_zone(lon):
+    tz = round(lon / (360 / 24))
+    label = "UTC%s%d"%('+' * int(tz >= 0) + '-' * int(tz < 0), abs(tz))
+    
+    return tz, label
+
 if __name__ == '__main__':
     assert ymd2d(2020, 1, 1) == 0
     assert ymd2d(2020, 1, 31) == 30

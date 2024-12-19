@@ -34,41 +34,43 @@ ORBITAL_PERIOD  = 365.256363004     # sidereal year [d]
 
 # (3) Earth's rotational axis; https://hpiers.obspm.fr/eop-pc/models/constants.html
 ROT_TILT        = 23.4392811        # relative to orbital plane [deg]
-EQUINOX_DATE    = 2458928.659028    # 2020-03-20 03:49 UTC; https://apps.aavso.org/v2/tools/julian-date-converter/
+EQUINOX_DATE    = calendar2jd("2020-03-20 03:49:00.0") # UTC; March 2020 equinox
 
 # (4) Earth's rotation
 LAT_SUBSOLAR    = 0                 # [deg]
-EQ_SOLAR_NOON   = 2458929.004861    # Solar noon following equinox at lon = 0 was 2020-03-20 12:07 UTC
+EQ_SOLAR_NOON   = calendar2jd("2020-03-20 12:07:00.0") # UTC; Solar noon following equinox at lon = 0
 #EQ_MEAN_NOON    = round(EQ_SOLAR_NOON)
 LON_SUBSOLAR    = (EQ_SOLAR_NOON - EQUINOX_DATE) / SYNODIC_DAY * 360 # longitude of subsolar point at EQUINOX_DATE
-#LON_SUBSOLAR    = lon_subsolar(2020, ymd2yd(2020, 3, 20)[1], 3 + 49 / 60)
 
-SIDEREAL_DAY    = 86164.0905 / DAY  # sidereal day [d]
-ROT_RATE        = 2 * np.pi / (SIDEREAL_DAY * DAY) # Earth rotation rate (sidereal) [rad/s]
-
-# Other parameters
-EARTH_RADIUS    = 6.371e6 # [m]; assume sphere
-
-def lon_subsolar(y, d, utc):
+def lon_subsolar(calendar_date):
     """
     Longitude of subsolar point at a given time
 
     Parameters
     ----------
-    y: int
-        Year in AD format
-    d: int
-        Number of days since January 1 of the year
-    utc: float
-        UTC in decimal hours since 00:00:00 UTC on the given date [h]
+    calendar_date: str
+        Calendar date in the form "YYYY-MM-DD HH:MM:SS.S"
 
     Returns
     -------
     lon: float
         Longitude of the subsolar point at the given time [deg]
     """
-    EOT = equation_of_time(y, d)
+    Y, M, D, H, MIN, S = calendar_split(calendar_date)
+
+    utc = H + MIN / 60 + S / 3600 # UTC in decimal hours since 00:00:00 UTC on the given date [h]
+    d = ymd2d(Y, M, D)
+    EOT = equation_of_time(Y, d)
+    
     return -15 * (utc - 12 + EOT / 60)
+
+#LON_SUBSOLAR    = lon_subsolar(jd2calendar(EQUINOX_DATE)) # calculated using equation of time
+
+SIDEREAL_DAY    = 86164.0905 / DAY  # sidereal day [d]
+ROT_RATE        = 2 * np.pi / (SIDEREAL_DAY * DAY) # Earth rotation rate (sidereal) [rad/s]
+
+# Other parameters
+EARTH_RADIUS    = 6.371e6 # [m]; assume sphere
 
 def ecc_anomaly(e, M, tolerance=0.002):
     """

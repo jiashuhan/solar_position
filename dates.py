@@ -81,7 +81,7 @@ def calendar2jd(calendar_date):
     Parameters
     ----------
     calendar_date: str
-        Calendar date in the form "YYYY-MM-DD"
+        Calendar date in the form "YYYY-MM-DD HH:MM:SS.S"
 
     Returns
     -------
@@ -94,7 +94,7 @@ def calendar2jd(calendar_date):
     - Last day of Julian calendar: October 4, 1582 AD 12:00:00 UT1 -> JD 2299160.0
     - First day of Gregorian calendar: October 15, 1582 AD 12:00:00 UT1 -> JD 2299161.0
     """
-    Y, M, D = np.array(calendar_date.split("-")).astype(int)
+    Y, M, D, H, MIN, S = calendar_split(calendar_date)
     assert Y > 1582 or (Y == 1582 and (M > 10 or (M == 10 and D >= 15))), "Must be later than October 15, 1582 AD."
 
     N_days = ymd2d(Y, M, D) # days since January 1, year Y
@@ -102,7 +102,7 @@ def calendar2jd(calendar_date):
     N_year = Y - 1582 # number of full years since January 1, 1582 (Gregorian)
     N_leap = num_leap(1582, Y) # number of leap days in between
 
-    jd = 2299161.0 + N_year * 365 + N_leap + N_days - days_in_1582
+    jd = 2299160.5 + N_year * 365 + N_leap + N_days - days_in_1582 + H / 24 + MIN / 1440 + S / 86400
 
     return jd
 
@@ -129,16 +129,16 @@ def jd2calendar(jd):
 
     days_in_1582 = ymd2d(1582, 10, 15) # days already passed in Gregorian 1582 (starts 10 days earlier than Julian 1582)
 
-    # try to find number of leap days until target year by guessing target year
+    # find number of leap days until target year by first guessing target year
     N_year = (days_since + days_in_1582) // (365 + 1/4 - 3/400) # number of full average Gregorian years since January 1, 1582
     year_guess = 1582 + N_year # may underestimate by slightly more than a year if close to beginning of calendar year
     year_guess_is_leap = is_leap(year_guess)
     
     N_leap = num_leap(1582, year_guess) # number of leap days until guessed year
     jd_guess = gregorian0 - days_in_1582 + N_year * 365 + N_leap # Julian date of January 1 00:00:00 UT1 of guessed year
-    diff = jd - hms - jd_guess # number of days underestimated, plus days in target year
+    diff = jd - hms - jd_guess # days in target year, plus number of days underestimated
     
-    if diff >= 365 + int(year_guess_is_leap): # underestimated year
+    if diff >= 365 + int(year_guess_is_leap): # underestimated by a year
         year = year_guess + 1
         diff -= 365 + int(year_guess_is_leap)
     else:
@@ -190,11 +190,11 @@ if __name__ == '__main__':
     assert num_leap(1997, 2005) == 2
     assert num_leap(1896, 2005) == 27
 
-    assert calendar2jd("1582-10-15") == 2299161.0
-    assert calendar2jd("1582-10-16") == 2299162.0
-    assert calendar2jd("1582-12-31") == 2299238.0
-    assert calendar2jd("2020-01-01") == 2458850.0
-    assert calendar2jd("2024-02-29") == 2460370.0
+    assert calendar2jd("1582-10-15 12:00:00.0") == 2299161.0
+    assert calendar2jd("1582-10-16 12:00:00.0") == 2299162.0
+    assert calendar2jd("1582-12-31 12:00:00.0") == 2299238.0
+    assert calendar2jd("2020-01-01 12:00:00.0") == 2458850.0
+    assert calendar2jd("2024-02-29 12:00:00.0") == 2460370.0
 
     assert jd2calendar(2299161.0) == "1582-10-15 12:00:00.0"
     assert jd2calendar(2299162.0) == "1582-10-16 12:00:00.0"

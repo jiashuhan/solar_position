@@ -59,7 +59,6 @@ def find_twilight(calendar_date, lat, lon, rise=False, N=100):
 
     return sol.root, alt_interp(sol.root), azi_interp(sol.root)
 
-# given a search range, find dates when azimuth at sunset is at a particular angle
 def find_obs_window(heading, begin_date, end_date, lat, lon, rise=False, tol=0.5, N=100):
     """
     Find time window during which the sun rises/sets in the desired heading

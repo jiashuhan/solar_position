@@ -75,11 +75,31 @@ south_noon_plus_12_stellarium = np.array([-33.74108, 180.06692])
 assert max(test_func(south_noon - south_noon_stellarium) / south_noon_stellarium) < 1e-2
 assert max(test_func(south_noon_plus_12 - south_noon_plus_12_stellarium) / south_noon_plus_12_stellarium) < 1e-2
 
-# Sunset predictions
+# Sunset predictions; # actual numbers from https://www.calculatorsoup.com/calculators/time/sunrise_sunset.php
+sunset_time, sunset_alt, sunset_azi = find_twilight("2000-01-01", LAT, LON, rise=False, N=30)
+tz, tz_label = time_zone(LON)
+print("Predicted: %s %s; Alt. = %.4g, Azi. = %.4g"%(jd2calendar(sunset_time + tz / 24), tz_label, sunset_alt, sunset_azi))
+print("Actual: 2000-01-01 16:53 UTC-8")
+
+sunset_time, sunset_alt, sunset_azi = find_twilight("2020-03-20", LAT, LON, rise=False, N=30)
+tz, tz_label = time_zone(LON)
+print("Predicted: %s %s; Alt. = %.4g, Azi. = %.4g"%(jd2calendar(sunset_time + tz / 24), tz_label, sunset_alt, sunset_azi))
+print("Actual: 2020-03-20 18:00 UTC-8")
+
+sunset_time, sunset_alt, sunset_azi = find_twilight("2020-03-21", LAT, LON, rise=False, N=30)
+tz, tz_label = time_zone(LON)
+print("Predicted: %s %s; Alt. = %.4g, Azi. = %.4g"%(jd2calendar(sunset_time + tz / 24), tz_label, sunset_alt, sunset_azi))
+print("Actual: 2020-03-21 18:01 UTC-8")
+
 sunset_time, sunset_alt, sunset_azi = find_twilight("2024-08-09", LAT, LON, rise=False, N=30)
 tz, tz_label = time_zone(LON)
 print("Predicted: %s %s; Alt. = %.4g, Azi. = %.4g"%(jd2calendar(sunset_time + tz / 24), tz_label, sunset_alt, sunset_azi))
-print("Actual: 2024-08-09 18:39 UTC-8") # from https://www.calculatorsoup.com/calculators/time/sunrise_sunset.php
+print("Actual: 2024-08-09 18:39 UTC-8")
+
+sunset_time, sunset_alt, sunset_azi = find_twilight("3000-01-01", LAT, LON, rise=False, N=30)
+tz, tz_label = time_zone(LON)
+print("Predicted: %s %s; Alt. = %.4g, Azi. = %.4g"%(jd2calendar(sunset_time + tz / 24), tz_label, sunset_alt, sunset_azi))
+print("Actual: 3000-01-01 16:51 UTC-8")
 
 # Time variation of solar position
 import matplotlib.pyplot as plt

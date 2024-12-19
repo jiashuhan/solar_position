@@ -38,9 +38,9 @@ EQUINOX_DATE    = calendar2jd("2020-03-20 03:49:00.0") # UTC; March 2020 equinox
 
 # (4) Earth's rotation
 LAT_SUBSOLAR    = 0                 # [deg]
-EQ_SOLAR_NOON   = calendar2jd("2020-03-20 12:07:00.0") # UTC; Solar noon following equinox at lon = 0
+EQ_SOLAR_NOON   = calendar2jd("2020-03-20 12:07:22.0") # UTC; Solar noon following equinox at lon = 0
 #EQ_MEAN_NOON    = round(EQ_SOLAR_NOON)
-LON_SUBSOLAR    = (EQ_SOLAR_NOON - EQUINOX_DATE) / SYNODIC_DAY * 360 # longitude of subsolar point at EQUINOX_DATE
+#LON_SUBSOLAR    = (EQ_SOLAR_NOON - EQUINOX_DATE) / SYNODIC_DAY * 360 # longitude of subsolar point at EQUINOX_DATE
 
 def lon_subsolar(calendar_date):
     """
@@ -64,7 +64,7 @@ def lon_subsolar(calendar_date):
     
     return -15 * (utc - 12 + EOT / 60)
 
-#LON_SUBSOLAR    = lon_subsolar(jd2calendar(EQUINOX_DATE)) # calculated using equation of time
+LON_SUBSOLAR    = lon_subsolar(jd2calendar(EQUINOX_DATE)) # calculated using equation of time
 
 SIDEREAL_DAY    = 86164.0905 / DAY  # sidereal day [d]
 ROT_RATE        = 2 * np.pi / (SIDEREAL_DAY * DAY) # Earth rotation rate (sidereal) [rad/s]
@@ -247,27 +247,26 @@ def rotation_angle(A, B, axis=None):
         axis = normal
     else:
         axis = unit_vec(axis)
-        assert np.isclose(np.abs(np.dot(axis, normal)), 1)
+        assert np.isclose(np.abs(np.dot(axis, normal)), 1) # axis must be normal
     
     dot = np.dot(A, B) # |A||B|cos(theta)
     det = np.linalg.det(np.array([axis, A, B])) # signed |A||B|sin(theta)
 
     return (np.arctan2(det, dot) + 2 * np.pi) % (2 * np.pi) # rotate A CCW around axis by theta to get B
 
-# angle needed to rotate a to b CCW
-def rotation_angle_(a, b, axis=2):
-    ref = np.zeros(3)
-    ref[axis] = 1
-    normal = unit_vec(np.cross(a, b))
-    dot = np.dot(normal, ref)
-    if dot >= 0:
-        theta = np.arccos(np.dot(a, b)) # [0, pi]
-        dot = 10
+def rotation_angle_(A, B, axis=None): # equivalent
+    normal = unit_vec(np.cross(A, B))
+    if axis is None:
+        axis = normal
+        orientation = 1
     else:
-        theta = 2 * np.pi - np.arccos(np.dot(a, b))
-        dot = -10
+        axis = unit_vec(axis)
+        orientation = np.dot(axis, normal)
+        assert np.isclose(np.abs(orientation), 1)
 
-    return theta
+    dot = np.dot(A, B) / np.linalg.norm(A) / np.linalg.norm(B)
+
+    return np.arccos(dot) if orientation >= 0 else 2 * np.pi - np.arccos(dot)
 
 # CCW rotation around x-axis
 def Rx(theta):
